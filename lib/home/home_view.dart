@@ -1,8 +1,12 @@
+import 'dart:developer';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:multiuser_notes/auth/login_view.dart';
 import 'package:multiuser_notes/home/add_note_view.dart';
 import 'package:multiuser_notes/main.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -42,19 +46,134 @@ class _HomeViewState extends State<HomeView> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return loader;
           }
-          if (snapshot.data!.isEmpty) {
+
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+          if (snapshot.data == null || snapshot.data!.isEmpty) {
             return Center(child: Text("No Notes Found!"));
           }
           return ListView.builder(
             itemCount: snapshot.data!.length,
             itemBuilder: (context, count) {
               final note = snapshot.data![count];
+              log(note.toString());
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
                 child: ListTile(
                   tileColor: Colors.grey.shade200,
-                  title: Text(note['title']),
-                  subtitle: Text(note['content']),
+                  title: Row(
+                    children: [
+                      Text("${note['title']}"),
+                      SizedBox(width: 2.w),
+                      Text(
+                        "by ${note['users']['name']}",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  subtitle: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        note['content'],
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                  // trailing: Text),
+                  trailing: IconButton(
+                    onPressed: () {
+                      // open a dialog box with a button and textfield
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text("Share Note"),
+                            content: TextField(
+                              decoration: InputDecoration(
+                                hintText: "Enter user email",
+                              ),
+                              onSubmitted: (value) async {
+                                try {
+                                  final userRes = await supabse
+                                      .from("users")
+                                      .select(
+                                        "id, name",
+                                      ) // only fetch what you need
+                                      .eq("email", value);
+
+                                  final user = userRes.first;
+
+                                  if (userRes.isEmpty) {
+                                    log("User not found");
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("User not found"),
+                                      ),
+                                    );
+                                  } else if (user['id'] ==
+                                      supabse.auth.currentUser!.id) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "You can't share with yourself",
+                                        ),
+                                      ),
+                                    );
+                                  } else if (note['user_notes'].any((
+                                    hrKoiValue,
+                                  ) {
+                                    return hrKoiValue['user_id'] == user['id'];
+                                  })) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "${user['name']} is already added to this note",
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    supabse
+                                        .from("user_notes")
+                                        .insert({
+                                          "user_id": user['id'],
+                                          "note_id": note['id'],
+                                        })
+                                        .then((e) {
+                                          Navigator.pop(context);
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                "Note Shared with ${user['name']}",
+                                              ),
+                                            ),
+                                          );
+                                        });
+                                  }
+                                } on PostgrestException catch (e) {
+                                  log(e.message);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.message)),
+                                  );
+                                } catch (e) {
+                                  log(e.toString());
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.toString())),
+                                  );
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    icon: Icon(CupertinoIcons.person_add),
+                  ),
                 ),
               );
             },
@@ -66,7 +185,9 @@ class _HomeViewState extends State<HomeView> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => AddNoteView()),
-          );
+          ).then((value) {
+            setState(() {});
+          });
         },
         child: Icon(Icons.add),
       ),
@@ -75,11 +196,12 @@ class _HomeViewState extends State<HomeView> {
 }
 
 Future<List<Map<String, dynamic>>> getNotesList() async {
-  final res = supabse
+  final res = await supabse
       .from("notes")
-      .select("*")
+      .select("*, users(name), user_notes(user_id)")
+      .eq("user_id", supabse.auth.currentUser!.id)
+      // .or("shared_with.eq.${supabse.auth.currentUser!.id}")
       .order("created_at", ascending: false);
+
   return res;
 }
-
-

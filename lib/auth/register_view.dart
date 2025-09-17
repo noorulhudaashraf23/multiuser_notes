@@ -45,12 +45,18 @@ class _RegisterViewState extends State<RegisterView> {
                       await supabse.auth.signUp(
                         email: email.text.trim(),
                         password: password.text.trim(),
-                        data: {"name": email.text.trim()},
+                        data: {"name": name.text.trim()},
                       );
+                      await supabse.from("users").insert({
+                        "id": supabse.auth.currentUser!.id,
+                        "name": name.text.trim(),
+                        "email": email.text.trim(),
+                      });
                       // Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Registered Successfully")),
                       );
+                      Navigator.pop(context);
                     } on AuthException catch (e) {
                       log(e.message);
                       setState(() {
