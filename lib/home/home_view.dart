@@ -57,7 +57,6 @@ class _HomeViewState extends State<HomeView> {
             itemCount: snapshot.data!.length,
             itemBuilder: (context, count) {
               final note = snapshot.data![count];
-              log(note.toString());
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
                 child: ListTile(
@@ -107,12 +106,12 @@ class _HomeViewState extends State<HomeView> {
                                   final user = userRes.first;
 
                                   if (userRes.isEmpty) {
-                                    log("User not found");
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text("User not found"),
                                       ),
                                     );
+                                    getNotesList();
                                   } else if (user['id'] ==
                                       supabse.auth.currentUser!.id) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -122,6 +121,7 @@ class _HomeViewState extends State<HomeView> {
                                         ),
                                       ),
                                     );
+                                    getNotesList();
                                   } else if (note['user_notes'].any((
                                     hrKoiValue,
                                   ) {
@@ -135,6 +135,7 @@ class _HomeViewState extends State<HomeView> {
                                         ),
                                       ),
                                     );
+                                    getNotesList();
                                   } else {
                                     supabse
                                         .from("user_notes")
@@ -154,6 +155,7 @@ class _HomeViewState extends State<HomeView> {
                                             ),
                                           );
                                         });
+                                    getNotesList();
                                   }
                                 } on PostgrestException catch (e) {
                                   log(e.message);
@@ -196,12 +198,27 @@ class _HomeViewState extends State<HomeView> {
 }
 
 Future<List<Map<String, dynamic>>> getNotesList() async {
-  final res = await supabse
-      .from("notes")
-      .select("*, users(name), user_notes(user_id)")
-      .eq("user_id", supabse.auth.currentUser!.id)
-      // .or("shared_with.eq.${supabse.auth.currentUser!.id}")
-      .order("created_at", ascending: false);
+  String currentUserId = supabse.auth.currentUser!.id;
+  log(currentUserId);
 
-  return res;
+  // Notes owned by the user
+  final ownedNotes = await supabse
+      .from("notes")
+      .select("*, users(name,id)")
+      .eq("user_id", currentUserId);
+  log(ownedNotes.toString());
+
+  // Notes shared with the user
+  final sharedNotes = await supabse
+      .from("notes")
+      .select("*, users(name,id), user_notes!inner(user_id)")
+      .eq("user_notes.user_id", currentUserId);
+  log(sharedNotes.toString());
+  // Merge and remove duplicates
+  final allNotes = {...ownedNotes, ...sharedNotes}.toList();
+
+  // Optional: sort by created_at descending
+  allNotes.sort((a, b) => b['created_at'].compareTo(a['created_at']));
+
+  return allNotes;
 }
