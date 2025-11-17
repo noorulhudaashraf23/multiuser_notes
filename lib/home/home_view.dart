@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:multiuser_notes/auth/login_view.dart';
 import 'package:multiuser_notes/home/add_note_view.dart';
+import 'package:multiuser_notes/home/edit_note_view.dart';
 import 'package:multiuser_notes/main.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,7 +24,7 @@ class _HomeViewState extends State<HomeView> {
         title: Text('Home'),
         leading: IconButton(
           onPressed: () async {
-            await supabse.auth.signOut();
+            await supabase.auth.signOut();
           },
           icon: Icon(Icons.logout),
         ),
@@ -60,6 +61,53 @@ class _HomeViewState extends State<HomeView> {
               return Padding(
                 padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
                 child: ListTile(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EditNoteView(noteId: note['id']),
+                      ),
+                    ).then((value) {
+                      setState(() {});
+                    });
+                  },
+                  onLongPress: () {
+                    if (note['user_id'] != supabase.auth.currentUser!.id) {
+                      log('owner nhi ha yh');
+                      return;
+                    }
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Confirmation Dialog"),
+                          content: Text(
+                            "Are you sure you want to delete this note?",
+                          ),
+                          actions: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                await supabase
+                                    .from("notes")
+                                    .delete()
+                                    .eq("id", note['id']);
+                                setState(() {
+                                  Navigator.pop(context);
+                                });
+                              },
+                              child: Text("Delete"),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text("Cancel"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                   tileColor: Colors.grey.shade200,
                   title: Row(
                     children: [
@@ -73,6 +121,7 @@ class _HomeViewState extends State<HomeView> {
                   ),
                   subtitle: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         note['content'],
@@ -96,14 +145,10 @@ class _HomeViewState extends State<HomeView> {
                               ),
                               onSubmitted: (value) async {
                                 try {
-                                  final userRes = await supabse
+                                  final userRes = await supabase
                                       .from("users")
-                                      .select(
-                                        "id, name",
-                                      ) // only fetch what you need
+                                      .select("id, name")
                                       .eq("email", value);
-
-                                  final user = userRes.first;
 
                                   if (userRes.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -112,8 +157,13 @@ class _HomeViewState extends State<HomeView> {
                                       ),
                                     );
                                     getNotesList();
-                                  } else if (user['id'] ==
-                                      supabse.auth.currentUser!.id) {
+                                    return; // 👈 stop execution here
+                                  }
+
+                                  final user = userRes.first; // safe now
+
+                                  if (user['id'] ==
+                                      supabase.auth.currentUser!.id) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -122,7 +172,7 @@ class _HomeViewState extends State<HomeView> {
                                       ),
                                     );
                                     getNotesList();
-                                  } else if (note['user_notes'].any((
+                                  } else if ((note['user_notes'] ?? []).any((
                                     hrKoiValue,
                                   ) {
                                     return hrKoiValue['user_id'] == user['id'];
@@ -137,33 +187,25 @@ class _HomeViewState extends State<HomeView> {
                                     );
                                     getNotesList();
                                   } else {
-                                    supabse
-                                        .from("user_notes")
-                                        .insert({
-                                          "user_id": user['id'],
-                                          "note_id": note['id'],
-                                        })
-                                        .then((e) {
-                                          Navigator.pop(context);
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                "Note Shared with ${user['name']}",
-                                              ),
-                                            ),
-                                          );
-                                        });
+                                    await supabase.from("user_notes").insert({
+                                      "user_id": user['id'],
+                                      "note_id": note['id'],
+                                    });
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "Note Shared with ${user['name']}",
+                                        ),
+                                      ),
+                                    );
                                     getNotesList();
                                   }
                                 } on PostgrestException catch (e) {
-                                  log(e.message);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text(e.message)),
                                   );
                                 } catch (e) {
-                                  log(e.toString());
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text(e.toString())),
                                   );
@@ -198,22 +240,19 @@ class _HomeViewState extends State<HomeView> {
 }
 
 Future<List<Map<String, dynamic>>> getNotesList() async {
-  String currentUserId = supabse.auth.currentUser!.id;
-  log(currentUserId);
+  String currentUserId = supabase.auth.currentUser!.id;
 
   // Notes owned by the user
-  final ownedNotes = await supabse
+  final ownedNotes = await supabase
       .from("notes")
       .select("*, users(name,id)")
       .eq("user_id", currentUserId);
-  log(ownedNotes.toString());
 
   // Notes shared with the user
-  final sharedNotes = await supabse
+  final sharedNotes = await supabase
       .from("notes")
       .select("*, users(name,id), user_notes!inner(user_id)")
       .eq("user_notes.user_id", currentUserId);
-  log(sharedNotes.toString());
   // Merge and remove duplicates
   final allNotes = {...ownedNotes, ...sharedNotes}.toList();
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1055929777574",
+    "project_id": "multiuser-notes",
+    "storage_bucket": "multiuser-notes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1055929777574:android:fa5e7be39525ef69a1a367",
+        "android_client_info": {
+          "package_name": "com.example.multiuser_notes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjlX03N-HZYJyAt_-kaACxfYoviMZtMkU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:multiuser_notes/auth/register_view.dart';
 import 'package:multiuser_notes/home/home_view.dart';
@@ -38,7 +39,7 @@ class _LoginViewState extends State<LoginView> {
                       setState(() {
                         isLoading = true;
                       });
-                      await supabse.auth.signInWithPassword(
+                      await supabase.auth.signInWithPassword(
                         email: email.text.trim(),
                         password: password.text.trim(),
                       );
@@ -85,4 +86,4 @@ class _LoginViewState extends State<LoginView> {
   }
 }
 
-final loader = Center(child: CircularProgressIndicator());
+final loader = Center(child: CupertinoActivityIndicator());

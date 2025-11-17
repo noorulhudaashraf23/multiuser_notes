@@ -1,16 +1,27 @@
-# multiuser_notes
+ 
+ In Progress
+ in app notifications / push notifications / broadcast notifications to users while adding them as a collaborators
+ FCM Token
+ Firebase Cloud Messaging 
+ Continue from => we have to store fcm token for every user and send notification particular to a user using app and for this we have to create deno + TS function (edge func)
 
-A new Flutter project.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+ Pending
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+ notifications via email using supabase edge functions
+ edge functions are the simple Deno + TypeScript functions to perform a set of task or a single task on demand or when we invoke them from our frontend (web or mobile)
+ we call these functions whenever we want and those functions run on supabase (server or cloud) instead of running inside our app
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+ ik single email can take about 2.5 sec to 10 sec 
+ 5sec/email
+ 1min/12emails
+ 60min/720emails
+ 
+Client => Flutter App
+Server (Supabase as Server) <=> (also has/have databases)
+Authenticate or Authorize => RLS
+
+
+mje ayi thi ap mera yaqeen kr len

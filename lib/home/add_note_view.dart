@@ -46,7 +46,7 @@ class _AddNoteViewState extends State<AddNoteView> {
                       setState(() {
                         isLoading = true;
                       });
-                      supabse
+                      supabase
                           .from("notes")
                           .insert({
                             "title": title.text.trim(),

@@ -42,13 +42,13 @@ class _RegisterViewState extends State<RegisterView> {
                       setState(() {
                         isLoading = true;
                       });
-                      await supabse.auth.signUp(
+                      await supabase.auth.signUp(
                         email: email.text.trim(),
                         password: password.text.trim(),
                         data: {"name": name.text.trim()},
                       );
-                      await supabse.from("users").insert({
-                        "id": supabse.auth.currentUser!.id,
+                      await supabase.from("users").insert({
+                        "id": supabase.auth.currentUser!.id,
                         "name": name.text.trim(),
                         "email": email.text.trim(),
                       });
