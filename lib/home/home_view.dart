@@ -21,7 +21,22 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home'),
+        title: TextButton(
+          onPressed: () async {
+            final res = await supabase.functions.invoke(
+              'collab-invite-email',
+              body: {
+                'name': supabase.auth.currentUser!.email!.split('@').first,
+              },
+            );
+            final data = res.data;
+
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(data['message'])));
+          },
+          child: Text('Home', style: TextStyle(fontSize: 20)),
+        ),
         leading: IconButton(
           onPressed: () async {
             await supabase.auth.signOut();

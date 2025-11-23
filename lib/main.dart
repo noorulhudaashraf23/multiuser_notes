@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:multiuser_notes/auth/login_view.dart';
 import 'package:multiuser_notes/firebase_messaging_service.dart';
@@ -10,10 +11,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Supabase.initialize(
-    url: 'https://uhargpcrsjwsxsplbfia.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoYXJncGNyc2p3c3hzcGxiZmlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NDcwMzksImV4cCI6MjA3MzQyMzAzOX0.Kh6jtuXbX4oUKz1Y6cxI0JcMOtkyglJhzxJ0HxR91nY',
+    url: dotenv.env['SUPABASE_URL'] ?? '',
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
   );
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final localNotificationsService = LocalNotificationsService.instance();

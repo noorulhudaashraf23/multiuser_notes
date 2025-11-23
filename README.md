@@ -24,4 +24,3 @@ Server (Supabase as Server) <=> (also has/have databases)
 Authenticate or Authorize => RLS
 
 
-mje ayi thi ap mera yaqeen kr len
