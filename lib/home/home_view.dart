@@ -21,22 +21,7 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: TextButton(
-          onPressed: () async {
-            final res = await supabase.functions.invoke(
-              'collab-invite-email',
-              body: {
-                'name': supabase.auth.currentUser!.email!.split('@').first,
-              },
-            );
-            final data = res.data;
-
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(data['message'])));
-          },
-          child: Text('Home', style: TextStyle(fontSize: 20)),
-        ),
+        title: Text('Home', style: TextStyle(fontSize: 20)),
         leading: IconButton(
           onPressed: () async {
             await supabase.auth.signOut();
@@ -206,6 +191,17 @@ class _HomeViewState extends State<HomeView> {
                                       "user_id": user['id'],
                                       "note_id": note['id'],
                                     });
+                                    var msg = sendColabInvite(
+                                      to: value,
+                                      subject:
+                                          "${note['users']['name']} Added You as Collaborator",
+                                      // body:
+                                      //     "Hi, ${user['name']} Hasta khelta flower , ${note['users']['name']} is inviting you to join the discussion : )",
+                                      body:
+                                          "Hi, ${user['name']} , ${note['users']['name']} is inviting you to join the discussion : )",
+                                    );
+                                    log(msg.toString());
+
                                     Navigator.pop(context);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -275,4 +271,23 @@ Future<List<Map<String, dynamic>>> getNotesList() async {
   allNotes.sort((a, b) => b['created_at'].compareTo(a['created_at']));
 
   return allNotes;
+}
+
+Future<String> sendColabInvite({to, subject, body}) async {
+  try {
+    final res = await supabase.functions.invoke(
+      'collab-invite-email',
+      body: {"to": to, "subject": subject, "body": body},
+      headers: {'Content-Type': 'application/json'},
+    );
+    log(res.data.toString());
+    if (res.data['success'].toString() == 'true') {
+      return res.data['message'];
+    } else {
+      return res.data['message'];
+    }
+  } catch (error) {
+    log(error.toString());
+    return error.toString();
+  }
 }

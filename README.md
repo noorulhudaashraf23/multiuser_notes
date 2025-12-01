@@ -1,5 +1,5 @@
  
- In Progress
+ In Progress (50%)
  in app notifications / push notifications / broadcast notifications to users while adding them as a collaborators
  FCM Token
  Firebase Cloud Messaging 
@@ -8,7 +8,7 @@
 
 
 
- Pending
+ Done ( (: a little pending :) )
 
  notifications via email using supabase edge functions
  edge functions are the simple Deno + TypeScript functions to perform a set of task or a single task on demand or when we invoke them from our frontend (web or mobile)
@@ -18,7 +18,18 @@
  5sec/email
  1min/12emails
  60min/720emails
- 
+
+ Pending 
+ Forgot Password
+ user click on forgot password button
+ a new screen opens up
+ user write his/her email (on which he/she created his/her account)
+ then he user will navigate to next screen and meanwhile user gets an opt on his/her mail inbox
+ user enters the otp and navigate to next screen where user can enter his/her new password along with confirm password
+
+
+
+
 Client => Flutter App
 Server (Supabase as Server) <=> (also has/have databases)
 Authenticate or Authorize => RLS
